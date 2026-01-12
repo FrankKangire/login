@@ -1,12 +1,15 @@
 <?php
-$servername = "localhost";
-$username = "root";
-$password = "";
-$db_name = "website_db";
+// Render provides these via Environment Variables
+$host = getenv('DB_HOST');
+$db   = getenv('DB_NAME');
+$user = getenv('DB_USER');
+$pass = getenv('DB_PASS');
+$port = "5432"; // Postgres port
 
-$conn = new mysqli($servername, $username, $password, $db_name);
+$conn_string = "host=$host port=$port dbname=$db user=$user password=$pass sslmode=require";
+$conn = pg_connect($conn_string);
 
-if($conn->connect_error){
-    die("Connection lost".$conn->connect_error);
+if (!$conn) {
+    die("Database Connection Failed.");
 }
 ?>
