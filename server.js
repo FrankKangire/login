@@ -1,16 +1,20 @@
 const express = require("express");
 const http = require("http");
-const { createProxyMiddleware } = require('http-proxy-middleware');
 const websocketServer = require("websocket").server;
 
 const app = express();
-const MAX_PLAYERS = 4; 
+// Render automatically provides the port via process.env.PORT
+const PORT = process.env.PORT || 9091; 
 
-app.use('/', createProxyMiddleware({ target: 'http://localhost:80', changeOrigin: true }));
-app.listen(9091, () => console.log("Proxy on 9091"));
+const MAX_PLAYERS = 4;
 
-const httpServer = http.createServer();
-httpServer.listen(9090, () => console.log("WS Server on 9090"));
+// Basic health check for test_connection.php
+app.get("/", (req, res) => {
+    res.send("Jungle Professor Game Server is Online!");
+});
+
+// Create a single HTTP server that handles both Express and WebSockets
+const httpServer = http.createServer(app);
 
 const clients = {};
 const games = {};
@@ -215,6 +219,7 @@ const questionPositions = {
     34: { jungle: ['j_tiger1', 'j_tiger2', 'j_tiger3'], city: ['c_wall1', 'c_wall2', 'c_wall3'] },
 };
 
+
 const wsServer = new websocketServer({ "httpServer": httpServer });
 
 wsServer.on("request", request => {
@@ -280,7 +285,7 @@ wsServer.on("request", request => {
             const mapType = result.mapType;
             const qIds = questionPositions[tile] ? questionPositions[tile][mapType] : [];
             
-            // FIXED LINE 282: Added .filter to ensure the ID exists in allQuestions before mapping
+            // Safety Filter: ensure question exists to prevent server crash
             const questionData = qIds
                 .filter(id => allQuestions[id] !== undefined) 
                 .map(id => ({ id: id, text: allQuestions[id].question }));
@@ -290,7 +295,7 @@ wsServer.on("request", request => {
 
         if (result.method === "verify_answer") {
             const qData = allQuestions[result.questionId];
-            if (!qData) return; // Safety check
+            if (!qData) return;
 
             clients[result.clientId].connection.send(JSON.stringify({
                 "method": "verification_result",
@@ -313,5 +318,8 @@ function updateGameState(){
     setTimeout(updateGameState, 500);
 }
 updateGameState();
+
+httpServer.listen(PORT, () => console.log(`Server merged on port ${PORT}`));
+
 function S4() { return (((1+Math.random())*0x10000)|0).toString(16).substring(1); }
 const guid = () => (S4() + S4() + "-" + S4() + "-4" + S4().substr(0,3) + "-" + S4() + "-" + S4() + S4() + S4()).toLowerCase();
