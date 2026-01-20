@@ -76,7 +76,8 @@ require "connection.php";
     let selectedMap = 'jungle';
     let currentSum = 0;
     let sessionResults = [];
-    let ws = new WebSocket("ws://localhost:9090");
+    const nodeURL = "jungle-professor-game-server.onrender.com"; // Your Node service URL
+    const ws = new WebSocket("wss://" + nodeURL);
 
     let questionResolver = null;
     let answerResolver = null;
